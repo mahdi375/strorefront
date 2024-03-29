@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.validators import MinValueValidator
 
 from tag.models import TaggedItem  # FIXME: Dependency
 
@@ -39,29 +40,44 @@ class Collection(models.Model):
         to='Product',
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='+',
     )
 
     def __str__(self) -> str:
         return self.title
 
+    class Meta:
+        ordering = ['title']
+
 
 class Promotion(models.Model):
     description = models.CharField(max_length=255)
     discount = models.FloatField()
 
+    def __str__(self) -> str:
+        return self.description
+
 
 class Product(models.Model):
-    prepopulated_fields = {"slug": ["title"]}
-
     title = models.CharField(max_length=255)
     slug = models.SlugField()  # unique=True
-    description = models.TextField(null=True)
-    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
-    inventory = models.IntegerField()
+    description = models.TextField(null=True, blank=True)
+    unit_price = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(1, message='unit_price must be grater than 1')
+        ]
+    )
+    inventory = models.IntegerField(
+        validators=[
+            MinValueValidator(0, message='inventory cant be negative'),
+        ],
+    )
     last_update = models.DateTimeField(auto_now=True)
     collection = models.ForeignKey(to=Collection, on_delete=models.CASCADE)
-    promotions = models.ManyToManyField(to=Promotion)
+    promotions = models.ManyToManyField(to=Promotion, blank=True)
     tags = GenericRelation(TaggedItem)
 
     def __str__(self) -> str:
