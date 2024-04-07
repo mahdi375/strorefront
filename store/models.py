@@ -35,7 +35,7 @@ class Address(models.Model):
 
 
 class Collection(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, unique=True)
     featured_product = models.ForeignKey(
         to='Product',
         on_delete=models.SET_NULL,
@@ -76,7 +76,11 @@ class Product(models.Model):
         ],
     )
     last_update = models.DateTimeField(auto_now=True)
-    collection = models.ForeignKey(to=Collection, on_delete=models.CASCADE)
+    collection = models.ForeignKey(
+        to=Collection,
+        on_delete=models.CASCADE,
+        related_name='products'
+    )
     promotions = models.ManyToManyField(to=Promotion, blank=True)
     tags = GenericRelation(TaggedItem)
 

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # My Apps
+    'rest_framework',
     'playground',
     'store',
     'tag',
@@ -146,4 +147,10 @@ DATABASES = {
         "HOST": "127.0.0.1",
         "PORT": "5432",
     }
+}
+
+
+REST_FRAMEWORK = {
+    'COERCE_DECIMAL_TO_STRING': False,
+    "PAGE_SIZE": 10,
 }
