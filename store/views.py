@@ -3,6 +3,7 @@ from django.db.models.aggregates import Count
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.views import APIView
 from rest_framework import status
 from .serializers import ProductSerializer, CollectionSerializer
 from .models import Product, Collection
@@ -25,31 +26,32 @@ def product_detail(request, id):
     return Response({"detail ping": "pong"})
 
 
-@api_view(['GET', 'POST'])
-def collection_list(request):
-    if request.method == 'GET':
+class CollectionList(APIView):
+    def get(self, request):
         queryset = Collection.objects.annotate(
             products_count=Count('products')
         )
-        serilaizer = CollectionSerializer(queryset, many=True)
-        return Response(serilaizer.data)
-    elif request.method == 'POST':
-        serilaizer = CollectionSerializer(data=request.data)
-        serilaizer.is_valid(raise_exception=True)
-        serilaizer.save()
-        return Response(serilaizer.data)
+        serializer = CollectionSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = CollectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-@api_view(['DELETE', 'GET'])
-def collection_detail(request, pk):
-    collection = get_object_or_404(Collection, pk=pk)
-    collection.products_count = collection.products.count()
+class CollectionDetail(APIView):
+    def get(sefl, request, pk):
+        collection = get_object_or_404(Collection, pk=pk)
+        collection.products_count = collection.products.count()
+        serializer = CollectionSerializer(collection)
+        return Response(serializer.data)
 
-    if request.method == 'DELETE':
-        if collection.products_count > 0:
-            return Response({'message': 'Has products'}, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, pk):
+        collection = get_object_or_404(Collection, pk=pk)
+        if collection.products.count() > 0:
+            return Response({'message': 'Has products!'}, status=status.HTTP_400_BAD_REQUEST)
 
         collection.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    return Response(CollectionSerializer(collection).data)
